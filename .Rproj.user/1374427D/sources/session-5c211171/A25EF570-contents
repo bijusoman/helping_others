@@ -1,0 +1,244 @@
+---
+title: "Helping others with their data"
+author: "Biju Soman"
+institute: "SCTIMST, Trivandrum"
+date: today
+format: 
+  revealjs:
+    slide-number: true
+    scrollable: true
+    logo: sctimst_logo.png
+    css: [styles.css, logo.css]
+    code-overflow: wrap
+    highlight-style: a11y
+    # height: 1050
+    # width: 700
+    # height: 1080
+    # width: 1920
+toc: true
+editor_options: 
+  chunk_output_type: console
+embed-resources: true
+---
+
+## Quickly import the file {.scrollable}
+
+Use `rio` package 
+`import()` for importing all kinds of files
+`export()` for exporting files to any format
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+# load libraries
+library(tidyverse)
+library(gtsummary)
+
+df <- 
+  rio::import(
+    here::here(
+      "data",
+      "ahs-cab2014-bihar-begusarai.csv"),
+    setclass = "tibble"
+  )
+
+
+df |> 
+  glimpse()
+
+```
+
+## quickly export the data {.scrollable}
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+fs::dir_ls(here::here("data"))
+
+rio::export(
+    df, 
+    here::here(
+      "data",
+      "ahs-cab2014-bihar-begusarai.xlsx"))
+
+rio::export(
+    df, 
+    here::here(
+      "data",
+      "ahs-cab2014-bihar-begusarai.dta"))
+rio::export(
+    df, 
+    here::here(
+      "data",
+      "ahs-cab2014-bihar-begusarai.sav"))
+rio::export(
+    df, 
+    here::here(
+      "data",
+      "ahs-cab2014-bihar-begusarai.rds"))
+
+# write_rds(df, here("data", "ahs-cab2014-bihar-begusarai.rds"))
+fs::dir_ls(here::here("data"))
+
+```
+
+## A quick look at the data {.scrollable}
+
+We can use `skmir` package and 
+the `skim()` function to this
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+df |> 
+  skimr::skim()
+
+df |> 
+  select(1:13) |> 
+  skimr::skim()
+
+df |> 
+  select(1:12, -11, -7) |> 
+  names()
+
+```
+
+
+
+
+## EDA - data exploration {.scrollable}
+
+See What are the important variables 
+
+`glimpse()`
+
+
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+df |> 
+  select(1:13, -7, -11) |> 
+  glimpse()
+
+```
+
+## EDA - data wrangling {.scrollable}
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+df |> 
+  select(1:13, -7, -11) |> names()
+
+df1 <- 
+ df |> 
+  select(1:13, -7, -11) |> 
+  janitor::clean_names() |> 
+  mutate(
+    state_code = factor(state_code),
+    district_code = factor(district_code),
+    rural_urban = factor(rural_urban),
+    stratum = factor(stratum),
+    psu_id = as.character(psu_id),
+    ahs_house_unit = as.character(ahs_house_unit),
+    date_survey = lubridate::dmy(date_survey),
+    test_salt_iodine = as.numeric(test_salt_iodine),
+    record_code_iodine = factor(record_code_iodine),
+    sl_no = as.character(sl_no),
+    sex = factor(sex))
+
+df1 |> 
+  glimpse()
+
+```
+
+## A quick look at the data {.scrollable}
+
+We can use `DataExplorer` package and 
+the `create_report()` function to this
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+# df1 |> 
+#   DataExplorer::create_report()
+
+df1 |> glimpse()
+
+```
+
+## Some reports {.scrollable}
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+df1 |> 
+  select(-psu_id, -ahs_house_unit, - date_survey, -sl_no) |> 
+  gtsummary::tbl_summary()
+
+```
+
+## By salt intake {.scrollable}
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+df1 |> 
+  select(-psu_id,-ahs_house_unit, - date_survey, -sl_no) |> 
+  gtsummary::tbl_summary(
+    by = record_code_iodine) |> 
+  add_p()
+
+
+df1$test_salt_iodine |> as.numeric() |> mean() |> round(3)  
+```
+
+## Inline `R codes`  {.scrollable}
+
+There were `r df |> nrow()` subjects and the average iodine concentratin in common salt was `r df1$test_salt_iodine |> as.numeric() |> mean() |> round(3)` mg/kg.
+
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: true
+#| code-fold: true
+
+# There were `r df |> nrow()` subjects and the average iodine concentratin in common salt was `r df1$test_salt_iodine |> as.numeric() |> mean() |> round(3)` mg/kg.
+
+df1 |> 
+  select(rural_urban, test_salt_iodine) |> 
+  mutate(test_salt_iodine = as.numeric(test_salt_iodine)) |> 
+  gtsummary::tbl_summary(
+    by = rural_urban) |> 
+  add_p()
+
+```
+
+
+
